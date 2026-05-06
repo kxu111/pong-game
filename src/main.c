@@ -1,6 +1,7 @@
 #include "raylib.h"
 
 #define RADIUS 18
+#define MOVESPEED 2.6
 
 // types
 typedef enum GameScreen { GAMEPLAY = 0, ENDING } GameScreen;
@@ -16,6 +17,7 @@ void DrawElements(void);
 void ServeBall(void);
 void MoveBall(void);
 void MoveRacket(Rectangle *racket, Direction direction);
+void MoveEnemyCPU(Rectangle *racket);
 
 void InitializeElements(void) {
     InitWindow(1280, 720, "pong");
@@ -68,15 +70,17 @@ void MoveBall(void) {
     if (ball.y + RADIUS >= GetScreenHeight() || ball.y - RADIUS <= 0)
         velocityY *= -1;
 
-    if ((ball.x + RADIUS >= GetScreenWidth() ||
-         ball.x - RADIUS <= 0)) { // score points
-        if (ball.x < GetScreenWidth()) {
-            ++leftScore;
-            ServeBall();
-        } else if (ball.x > GetScreenWidth()) {
-            ++rightScore;
-            ServeBall();
-        }
+    if (ball.x + RADIUS >= GetScreenWidth()) {
+        // score points, flip the velocity, and reset the ball
+        ++leftScore;
+        velocityX *= -1;
+        velocityY *= -1;
+        ServeBall();
+    } else if (ball.x - RADIUS <= 0) {
+        ++rightScore;
+        velocityX *= -1;
+        velocityY *= -1;
+        ServeBall();
     }
 
     ball.x += velocityX;
@@ -84,13 +88,22 @@ void MoveBall(void) {
 }
 
 void MoveRacket(Rectangle *racket, Direction direction) {
-    int step = (direction == UP) ? -RADIUS / 2 : RADIUS / 2;
+    int step = (direction == UP) ? -RADIUS / MOVESPEED : RADIUS / MOVESPEED;
 
     if ((racket->y <= 0 && direction == UP) ||
         (racket->y >= GetScreenHeight() - racket->height && direction == DOWN))
         return;
 
     racket->y += step;
+}
+
+void MoveEnemyCPU(Rectangle *racket) {
+    int step = RADIUS / MOVESPEED;
+    if ((ball.y < racket->y) && (racket->y >= 0))
+        racket->y -= step;
+    else if ((ball.y > racket->y) &&
+             (racket->y <= GetScreenHeight() - racket->height))
+        racket->y += step;
 }
 
 int main(void) {
@@ -101,6 +114,7 @@ int main(void) {
         switch (currentScreen) {
         case GAMEPLAY:
             MoveBall();
+            MoveEnemyCPU(&rightRacket);
             if (IsKeyDown(KEY_W))
                 MoveRacket(&leftRacket, UP);
             else if (IsKeyDown(KEY_S))
