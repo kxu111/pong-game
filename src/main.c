@@ -63,9 +63,9 @@ void MoveBall(void) {
     static int velocityX = RADIUS / 2;
     static int velocityY = RADIUS / 2;
 
-    if ((CheckCollisionRecs(ball, leftRacket)) ||
-        (CheckCollisionRecs(ball, rightRacket)))
-        // check for racket collision
+    if ((CheckCollisionRecs(ball, leftRacket) && ball.x > leftRacket.x) ||
+        (CheckCollisionRecs(ball, rightRacket) && ball.x < rightRacket.x))
+        // check for racket collision & if ball is behind racket
         velocityX *= -1;
     if (ball.y + RADIUS >= GetScreenHeight() || ball.y - RADIUS <= 0)
         velocityY *= -1;
