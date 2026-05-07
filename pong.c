@@ -1,7 +1,7 @@
 #include "raylib.h"
 
-#define RADIUS 18
-#define MOVESPEED 2.6
+#define RADIUS 20
+#define MOVESPEED 2.4
 
 // types
 typedef enum GameScreen { GAMEPLAY = 0, ENDING } GameScreen;
@@ -9,7 +9,8 @@ typedef enum Direction { UP = 0, DOWN } Direction;
 
 // globals
 Rectangle ball, leftRacket, rightRacket;
-int leftScore = 0, rightScore = 0, scoreWidth;
+int leftScore = 0, rightScore = 0, scoreWidth, velocityX = 0, velocityY = 0;
+float racketVertPos = 0.0;
 
 // blueprints
 void InitializeElements(void);
@@ -25,16 +26,15 @@ void InitializeElements(void) {
 
     int racketWidth = 30;
     int racketHeight = 150;
-    int racketOffset = 30;
-    float racketVertPos =
-        (float)GetScreenHeight() / 2 - (float)racketHeight / 2;
+    int racketOffset = 20;
+    racketVertPos = (float)GetScreenHeight() / 2 - (float)racketHeight / 2;
 
     // initialize stuff
     ball = (Rectangle){(float)GetScreenWidth() / 2,
                        (float)GetScreenHeight() / 2, RADIUS};
     leftRacket =
         (Rectangle){racketOffset, racketVertPos, racketWidth, racketHeight};
-    rightRacket = (Rectangle){GetScreenWidth() - racketOffset * 2,
+    rightRacket = (Rectangle){(GetScreenWidth() - racketOffset) - racketWidth,
                               racketVertPos, racketWidth, racketHeight};
     scoreWidth = MeasureText("00", 60);
 }
@@ -57,20 +57,27 @@ void DrawElements(void) {
 void ServeBall(void) {
     ball.x = (float)GetScreenWidth() / 2;
     ball.y = (float)GetScreenHeight() / 2;
+
+    leftRacket.y = racketVertPos;
+    rightRacket.y = racketVertPos;
+
+    velocityX = RADIUS / -2;
+    velocityY = RADIUS / -2;
 }
 
 void MoveBall(void) {
-    static int velocityX = RADIUS / 2;
-    static int velocityY = RADIUS / 2;
-
     // check for racket collision & if ball is in front of racket
-    if (CheckCollisionRecs(ball, leftRacket) && ball.x > leftRacket.x) {
+    if (CheckCollisionRecs(ball, leftRacket) &&
+        (ball.x - RADIUS >= leftRacket.x - leftRacket.width / 2)) {
+        if ((ball.y + RADIUS <= leftRacket.y) ||
+            (ball.y - RADIUS >= leftRacket.y + leftRacket.height))
+            velocityY *= -1;
         velocityX *= -1;
-        ball.x += RADIUS;
+        ball.x += (float)RADIUS / 2;
     } else if (CheckCollisionRecs(ball, rightRacket) &&
-               ball.x < rightRacket.x) {
+               (ball.x + RADIUS <= (rightRacket.x + rightRacket.width))) {
         velocityX *= -1;
-        ball.x -= RADIUS;
+        ball.x -= (float)RADIUS / 2;
     }
 
     if (ball.y + RADIUS >= GetScreenHeight() || ball.y - RADIUS <= 0)
@@ -111,6 +118,7 @@ void MoveEnemyCPU(Rectangle *racket) {
 int main(void) {
     GameScreen currentScreen = GAMEPLAY;
     InitializeElements();
+    ServeBall();
 
     while (!WindowShouldClose()) {
         switch (currentScreen) {
