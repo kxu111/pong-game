@@ -45,7 +45,7 @@ void DrawElements(void) {
     DrawText(TextFormat("%02d", rightScore), (GetScreenWidth() / 2) + 50, 50,
              60, GRAY);
 
-    DrawCircle(ball.x, ball.y, ball.width, WHITE);
+    DrawCircle(ball.x, ball.y, RADIUS, WHITE);
     DrawLine((float)GetScreenWidth() / 2, 0, (float)GetScreenWidth() / 2,
              (float)GetScreenHeight(), WHITE);
     DrawRectangle(leftRacket.x, leftRacket.y, leftRacket.width,
@@ -63,23 +63,25 @@ void MoveBall(void) {
     static int velocityX = RADIUS / 2;
     static int velocityY = RADIUS / 2;
 
-    if ((CheckCollisionRecs(ball, leftRacket) && ball.x > leftRacket.x) ||
-        (CheckCollisionRecs(ball, rightRacket) && ball.x < rightRacket.x))
-        // check for racket collision & if ball is behind racket
+    // check for racket collision & if ball is in front of racket
+    if (CheckCollisionRecs(ball, leftRacket) && ball.x > leftRacket.x) {
         velocityX *= -1;
+        ball.x += RADIUS;
+    } else if (CheckCollisionRecs(ball, rightRacket) &&
+               ball.x < rightRacket.x) {
+        velocityX *= -1;
+        ball.x -= RADIUS;
+    }
+
     if (ball.y + RADIUS >= GetScreenHeight() || ball.y - RADIUS <= 0)
         velocityY *= -1;
 
     if (ball.x + RADIUS >= GetScreenWidth()) {
         // score points, flip the velocity, and reset the ball
         ++leftScore;
-        velocityX *= -1;
-        velocityY *= -1;
         ServeBall();
     } else if (ball.x - RADIUS <= 0) {
         ++rightScore;
-        velocityX *= -1;
-        velocityY *= -1;
         ServeBall();
     }
 
